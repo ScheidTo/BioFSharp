@@ -36,5 +36,6 @@
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="16.*" />
     <ProjectReference Include="..\..\src\BioFSharp\BioFSharp.fsproj" />
     <ProjectReference Include="..\..\src\BioFSharp.IO\BioFSharp.IO.fsproj" />
+    <ProjectReference Include="..\..\src\BioFSharp.Stats\BioFSharp.Stats.fsproj" />
   </ItemGroup>
 </Project>
