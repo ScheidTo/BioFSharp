@@ -5,47 +5,53 @@ open System.Collections.Generic
 
 
 module RNASeq = 
-    type RNASeqInput = { // type construction
+    
+    type RNASeqInput = { 
     GeneID : string
     GeneLength : float
     GeneCount : float
     } with static member Create id gl gc = {GeneID=id;GeneLength=gl;GeneCount=gc}
-    //module Rpkm =
-    let calcRPM sumOfAllReadsPerMil counts =
+
+    type NormalizationMethod = 
+        | RPKM
+        | TPM
+
+    type NormalizedCounts = { 
+    GeneID : string
+    NormalizedCount : float
+    NormalizationMethod: NormalizationMethod
+    } with static member Create id nc nm = {GeneID=id;NormalizedCount=nc;NormalizationMethod=nm}
+
+    let private calcRPM sumOfAllReadsPerMil counts =
         (counts |> float) / sumOfAllReadsPerMil
 
-    let calcRPKM geneLength rpm = 
+    let private calcRPKM geneLength rpm = 
         (float rpm) / ((float geneLength) / 1000.) 
 
-    let rpkms (geneLengthAndCounts:seq<RNASeqInput>) =
+    let private rpkmsOf (geneIDs:seq<string>) (length:seq<float>) (counts:seq<float>) =
         let sumOfAllReads = 
-                geneLengthAndCounts
-                |> Seq.map (fun geneLengthAndCounts -> geneLengthAndCounts.GeneCount)
+                counts
                 |> Seq.sum
         let sumOfAllReadsPerMil =
             sumOfAllReads / 1000000. 
         let rpms =
-            geneLengthAndCounts
-            |> Seq.map (fun geneLengthAndCounts -> calcRPM sumOfAllReadsPerMil geneLengthAndCounts.GeneCount)
+            Seq.map (fun counts -> calcRPM sumOfAllReadsPerMil counts) counts
         let rpkms =
-            let geneLengthsRPM = 
-                geneLengthAndCounts
-                |> Seq.map (fun getLength -> getLength.GeneLength)
             let rpkm =
-                Seq.zip geneLengthsRPM rpms
+                Seq.zip length rpms
                 |> Seq.map (fun (length, rpm) -> calcRPKM length rpm)
             rpkm
-        let geneID =
-            geneLengthAndCounts
-            |> Seq.map (fun geneLengthAndCounts -> geneLengthAndCounts.GeneID)
         let rpkmResult =
-            Seq.zip geneID rpkms
+            Seq.map2 (fun ids counts -> {GeneID=ids; NormalizedCount=counts; NormalizationMethod=RPKM}) geneIDs rpkms
         rpkmResult
-    //module Tpm =
-    let tpms (geneLengthAndCounts:seq<RNASeqInput>) =
+
+    let rpkms (idLengthAndCounts:seq<RNASeqInput>) =
+        rpkmsOf (idLengthAndCounts |> Seq.map (fun x -> x.GeneID))  (idLengthAndCounts |> Seq.map (fun x -> x.GeneLength))  (idLengthAndCounts |> Seq.map (fun x -> x.GeneCount)) 
+
+    let private tpmsOf (idLengthAndCounts:seq<RNASeqInput>) =
         let rpk = 
-            geneLengthAndCounts
-            |> Seq.map (fun geneLengthAndCounts -> geneLengthAndCounts.GeneCount/geneLengthAndCounts.GeneLength/1000.)
+            idLengthAndCounts
+            |> Seq.map (fun idLengthAndCounts -> idLengthAndCounts.GeneCount/idLengthAndCounts.GeneLength/1000.)
         let sumOfAllReads =
             rpk
             |> Seq.sum
@@ -55,8 +61,12 @@ module RNASeq =
             rpk
             |> Seq.map (fun rpks -> rpks/sumOfAllReadsPerMil)
         let geneID =
-            geneLengthAndCounts
-            |> Seq.map (fun geneLengthAndCounts -> geneLengthAndCounts.GeneID)
+            idLengthAndCounts
+            |> Seq.map (fun idLengthAndCounts -> idLengthAndCounts.GeneID)
         let tpmResult =
-            Seq.zip geneID tpms
+            Seq.map2 (fun ids counts -> {GeneID=ids; NormalizedCount=counts; NormalizationMethod=TPM}) geneID tpms
         tpmResult
+    
+    let tpms (idLengthAndCounts:seq<RNASeqInput>) =
+        tpmsOf idLengthAndCounts 
+
