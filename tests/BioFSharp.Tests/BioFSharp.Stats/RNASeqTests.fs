@@ -19,19 +19,19 @@ let RNASeqTests =
     
     testList "RNASeqTests" [
         testCase "RPKM" (fun _ ->
-            Expect.equal 
-                (RNASeq.rpkms testInSeq
-                |> Array.ofSeq)
-                (RPKMres
-                |> Array.ofSeq)
+            Expect.sequenceEqual
+                (RNASeq.rpkms testInSeq)
+                //|> Array.ofSeq)
+                (RPKMres)
+                //|> Array.ofSeq)
                 "RPKM did not return correct Sequence"
         )
         testCase "TPM" (fun _ ->
-            Expect.equal 
-                (RNASeq.tpms testInSeq 
-                |> Array.ofSeq)
-                (TPMres
-                |> Array.ofSeq)
+            Expect.sequenceEqual 
+                (RNASeq.tpms testInSeq) 
+                //|> Array.ofSeq)
+                (TPMres)
+                //|> Array.ofSeq)
                 "TPM did not return correct Sequence"
         )        
     ]
